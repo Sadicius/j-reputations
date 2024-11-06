@@ -170,6 +170,7 @@ AddEventHandler('j-reputations:client:showCategory', function(data)
             id = 'reputation_menu_adv',
             title = 'Reputations in Category',
             onBack = function() end,
+            menu = 'reputation_menu',
             options = reputationTable
         })
 
