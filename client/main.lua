@@ -176,3 +176,31 @@ AddEventHandler('j-reputations:client:showCategory', function(data)
         lib.showContext('reputation_menu_adv')
     end
 end)
+
+RegisterCommand('addrep', function(source, args, rawCommand)
+    local repType = args[1]  -- Tipo de reputación
+    local amount = tonumber(args[2]) or 1  -- La cantidad de reputación a añadir, por defecto 1
+
+    if not repType then
+        TriggerEvent('chat:addMessage', source, {
+            args = { 'Error', 'You must specify a reputation type!' }
+        })
+        return
+    end
+
+    TriggerServerEvent('j-reputations:server:addrep', repType, amount)
+end, false)
+
+RegisterCommand('removerep', function(source, args, rawCommand)
+    local repType = args[1]  -- Tipo de reputación
+    local amount = tonumber(args[2]) or 1  -- La cantidad de reputación a quitar, por defecto 1
+
+    if not repType then
+        TriggerEvent('chat:addMessage', source, {
+            args = { 'Error', 'You must specify a reputation type!' }
+        })
+        return
+    end
+
+    TriggerServerEvent('j-reputations:server:removerep', repType, amount)
+end, false)
