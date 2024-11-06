@@ -104,10 +104,11 @@ end)
 lib.callback.register('j-reputations:server:getAllRep', function(source)
     local Player = RSGCore.Functions.GetPlayer(source)
     local citizenid = Player.PlayerData.citizenid
-
+    print('hey get')
     local reputationData = MySQL.query.await('SELECT repData FROM reputations WHERE citizenid = ? LIMIT 1', { citizenid })
+    print(json.encode(reputationData[1].repData))
     if reputationData and reputationData[1] then
-        return json.decode(reputationData[1].repData) or {}
+        return json.decode(reputationData[1].repData)
     else
         return Config.Reputations
     end

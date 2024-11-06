@@ -24,9 +24,31 @@ RegisterCommand('checkrep', function()
     local reputations = lib.callback.await('j-reputations:server:getAllRep', false)
 
     local categories = {}
+    local totalReputation = {}
+    local maxReputation = {}
+    local minReputation = {}
+
     for _, rep in ipairs(reputations) do
         categories[rep.category] = categories[rep.category] or {}
         table.insert(categories[rep.category], rep)
+
+        -- progress menu
+        totalReputation[rep.category] = totalReputation[rep.category] or 0
+        totalReputation[rep.category] = totalReputation[rep.category] + rep.reputationValue
+
+        -- Determinar el máximo valor de reputación en esa categoría
+        if not maxReputation[rep.category] then
+            maxReputation[rep.category] = rep.reputationValue
+        else
+            maxReputation[rep.category] = math.max(maxReputation[rep.category], rep.reputationValue)
+        end
+
+        -- Determinar el mínimo valor de reputación en esa categoría
+        if not minReputation[rep.category] then
+            minReputation[rep.category] = rep.reputationValue
+        else
+            minReputation[rep.category] = math.min(minReputation[rep.category], rep.reputationValue)
+        end
     end
 
     if Config.menuType == 'rsg-menu' then
@@ -40,9 +62,15 @@ RegisterCommand('checkrep', function()
         }
 
         for category, reps in pairs(categories) do
+            local totalRep = totalReputation[category]
+            local categoryProgress = 0
+            if maxReputation[category] > minReputation[category] then
+                categoryProgress = math.floor((totalRep - minReputation[category]) / (maxReputation[category] - minReputation[category]) * 100)
+            end
+
             table.insert(categoryMenu, {
                 header = category,
-                txt = "View reputations in " .. category,
+                txt =  "Total Reputation: " .. totalRep .. " | Progress: " .. categoryProgress .. "%",
                 isMenuHeader = false,
                 params = {
                     event = 'j-reputations:client:showCategory',
@@ -59,19 +87,31 @@ RegisterCommand('checkrep', function()
 
         for category, reps in pairs(categories) do
             local metadata = {}
+            local totalRep = totalReputation[category]
+            local categoryProgress = 0
+            if maxReputation[category] > minReputation[category] then
+                categoryProgress = math.floor((totalRep - minReputation[category]) / (maxReputation[category] - minReputation[category]) * 100)
+            end
+
             for _, rep in ipairs(reps) do
+                local repProgress = 0
+                if maxReputation[category] > minReputation[category] then
+                    repProgress = math.floor((rep.reputationValue - minReputation[category]) / (maxReputation[category] - minReputation[category]) * 100)
+                end
                 table.insert(metadata, {
                     label = rep.repType,
-                    value = rep.reputationValue
+                    value = rep.reputationValue,
+                    progress = repProgress,
                 })
             end
 
             table.insert(categoryMenu, {
                 title = category,
-                description = "View reputations in " .. category,
+                description = "Total Reputation: " .. totalRep .. " | Progress: " .. categoryProgress .. "%",
                 event = 'j-reputations:client:showCategory',
                 args = { reps = reps },
                 icon = 'fa-solid fa-stop',
+                progress = categoryProgress,
                 metadata = metadata,
                 arrow = true
             })
@@ -82,12 +122,14 @@ RegisterCommand('checkrep', function()
             title = 'My Reputations',
             options = categoryMenu
         })
+        lib.showContext('reputation_menu')
     end
 end, false)
 
 RegisterNetEvent('j-reputations:client:showCategory')
 AddEventHandler('j-reputations:client:showCategory', function(data)
     local reps = data.reps
+
     if Config.MenuType == 'rsg-menu' then
         local repMenu = {
             {
@@ -98,6 +140,7 @@ AddEventHandler('j-reputations:client:showCategory', function(data)
         }
 
         for _, rep in ipairs(reps) do
+
             table.insert(repMenu, {
                 header = rep.repType,
                 txt = "Reputation Value: " .. rep.reputationValue,
@@ -110,20 +153,26 @@ AddEventHandler('j-reputations:client:showCategory', function(data)
     elseif Config.MenuType == 'ox_lib' then
         local reputationTable = {}
 
+        local minReputation = 0
+        local maxReputation = 1000
+
         for _, rep in ipairs(reps) do
             table.insert(reputationTable, {
                 title = rep.repType,
                 description = 'Reputation Value: ' .. rep.reputationValue,
+                progress = math.floor((rep.reputationValue - minReputation) / (maxReputation - minReputation) * 100),
+                colorScheme = Config.XPBarColour,
                 icon = 'fa-solid fa-stop',
             })
         end
 
         lib.registerContext({
-            id = 'reputation_menu_avd',
+            id = 'reputation_menu_adv',
             title = 'Reputations in Category',
             onBack = function() end,
-            menu = 'reputation_menu',
             options = reputationTable
         })
+
+        lib.showContext('reputation_menu_adv')
     end
 end)
