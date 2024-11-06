@@ -1,4 +1,5 @@
 local RSGCore = exports['rsg-core']:GetCoreObject()
+lib.locale()
 
 RegisterServerEvent('j-reputations:server:addrep')
 AddEventHandler('j-reputations:server:addrep', function(repType, amount)
@@ -23,7 +24,7 @@ AddEventHandler('j-reputations:server:addrep', function(repType, amount)
 
     local newreputationData = json.encode(reputationData)
     MySQL.update('UPDATE reputations SET repData = ? WHERE citizenid = ?', { newreputationData, citizenid })
-    TriggerClientEvent('j-reputations:client:Notify', src, "You have received " .. repType .. " reputation", 'inform', 5000)
+    TriggerClientEvent('j-reputations:client:Notify', src, locale('sv_lang1') .. repType .. locale('sv_lang2'), 'inform', 5000)
 
 end)
 
@@ -44,7 +45,7 @@ AddEventHandler('j-reputations:server:removerep', function(repType, amount)
     end
     local newreputationData = json.encode(reputationData)
     MySQL.update('UPDATE reputations SET repData = ? WHERE citizenid = ?', { newreputationData, citizenid })
-    TriggerClientEvent('j-reputations:client:Notify', src, repType .. " reputation reduced", 'inform', 5000)
+    TriggerClientEvent('j-reputations:client:Notify', src, repType .. locale('sv_lang3'), 'inform', 5000)
 
 end)
 
@@ -72,9 +73,9 @@ AddEventHandler('j-reputations:server:checkrep', function()
             citizenid, json.encode(initialReputations)
         })
 
-        print('Reputations initialized for new citizen ' .. citizenid)
+        print(locale('sv_lang4') .. citizenid)
     else
-        print('Reputations already exist for citizen ' .. citizenid)
+        print(locale('sv_lang5') .. citizenid)
     end
 end)
 

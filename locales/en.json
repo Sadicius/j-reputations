@@ -1,0 +1,15 @@
+{
+    "cl_lang1" : "My Reputation Categories",
+    "cl_lang2" : "Total Reputation: ",
+    "cl_lang3" : " | Progress: ",
+    "cl_lang4" : "My Reputations",
+    "cl_lang5" : "Reputations in Category",
+    "cl_lang6" : "Reputation Value: ",
+    "cl_lang7" : "You must specify a reputation type!",
+    "cl_lang8" : "My Reputation Categories",
+    "sv_lang1" : "You have received ",
+    "sv_lang2" : " reputation",
+    "sv_lang3" : " reputation reduced",
+    "sv_lang4" : "Reputations initialized for new citizen ",
+    "sv_lang5" : "Reputations already exist for citizen "
+}
