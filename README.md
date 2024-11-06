@@ -4,6 +4,8 @@ This reputation system allows you to track and manage player reputations based o
 
 # Requirements
 * [rsg-core](https://github.com/Rexshack-RedM/rsg-core)
+* [rsg-menu](https://github.com/Artmines/rsg-menu)
+* [rNotify](https://github.com/RexShack/rNotify)
 
 # Features
 * Track player reputations across multiple types (e.g., crafting, criminal, farming).
