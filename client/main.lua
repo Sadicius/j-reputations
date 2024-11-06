@@ -1,6 +1,7 @@
 local RSGCore = exports['rsg-core']:GetCoreObject()
 local isLoggedIn = false
 local PlayerJob = {}
+lib.locale()
 
 RegisterNetEvent('RSGCore:Client:OnPlayerLoaded')
 AddEventHandler('RSGCore:Client:OnPlayerLoaded', function()
@@ -55,7 +56,7 @@ RegisterCommand('checkrep', function()
                 -- Menú de categorías
         local categoryMenu = {
             {
-                header = "My Reputation Categories",
+                header = locale('cl_lang_1'),
                 txt = "",
                 isMenuHeader = true
             }
@@ -70,7 +71,7 @@ RegisterCommand('checkrep', function()
 
             table.insert(categoryMenu, {
                 header = category,
-                txt =  "Total Reputation: " .. totalRep .. " | Progress: " .. categoryProgress .. "%",
+                txt =  locale('cl_lang2') .. totalRep .. locale('cl_lang3') .. categoryProgress .. "%",
                 isMenuHeader = false,
                 params = {
                     event = 'j-reputations:client:showCategory',
@@ -107,7 +108,7 @@ RegisterCommand('checkrep', function()
 
             table.insert(categoryMenu, {
                 title = category,
-                description = "Total Reputation: " .. totalRep .. " | Progress: " .. categoryProgress .. "%",
+                description = locale('cl_lang2') .. totalRep .. locale('cl_lang3') .. categoryProgress .. "%",
                 event = 'j-reputations:client:showCategory',
                 args = { reps = reps },
                 icon = 'fa-solid fa-stop',
@@ -119,7 +120,7 @@ RegisterCommand('checkrep', function()
 
         lib.registerContext({
             id = 'reputation_menu',
-            title = 'My Reputations',
+            title = locale('cl_lang4'),
             options = categoryMenu
         })
         lib.showContext('reputation_menu')
@@ -133,7 +134,7 @@ AddEventHandler('j-reputations:client:showCategory', function(data)
     if Config.MenuType == 'rsg-menu' then
         local repMenu = {
             {
-                header = "Reputations in Category",
+                header = locale('cl_lang5'),
                 txt = "",
                 isMenuHeader = true
             }
@@ -143,7 +144,7 @@ AddEventHandler('j-reputations:client:showCategory', function(data)
 
             table.insert(repMenu, {
                 header = rep.repType,
-                txt = "Reputation Value: " .. rep.reputationValue,
+                txt = locale('cl_lang6') .. rep.reputationValue,
                 isMenuHeader = false
             })
         end
@@ -159,7 +160,7 @@ AddEventHandler('j-reputations:client:showCategory', function(data)
         for _, rep in ipairs(reps) do
             table.insert(reputationTable, {
                 title = rep.repType,
-                description = 'Reputation Value: ' .. rep.reputationValue,
+                description = locale('cl_lang6') .. rep.reputationValue,
                 progress = math.floor((rep.reputationValue - minReputation) / (maxReputation - minReputation) * 100),
                 colorScheme = Config.XPBarColour,
                 icon = 'fa-solid fa-stop',
@@ -168,7 +169,7 @@ AddEventHandler('j-reputations:client:showCategory', function(data)
 
         lib.registerContext({
             id = 'reputation_menu_adv',
-            title = 'Reputations in Category',
+            title = locale('cl_lang5'),
             onBack = function() end,
             menu = 'reputation_menu',
             options = reputationTable
@@ -184,7 +185,7 @@ RegisterCommand('addrep', function(source, args, rawCommand)
 
     if not repType then
         TriggerEvent('chat:addMessage', source, {
-            args = { 'Error', 'You must specify a reputation type!' }
+            args = { 'Error', locale('cl_lang7') }
         })
         return
     end
@@ -198,7 +199,7 @@ RegisterCommand('removerep', function(source, args, rawCommand)
 
     if not repType then
         TriggerEvent('chat:addMessage', source, {
-            args = { 'Error', 'You must specify a reputation type!' }
+            args = { 'Error', locale('cl_lang7') }
         })
         return
     end
