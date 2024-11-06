@@ -66,5 +66,4 @@ if farmingRep < 10 then
     return
 end
 
-
 ```
