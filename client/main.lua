@@ -51,7 +51,7 @@ RegisterCommand('checkrep', function()
         end
     end
 
-    if Config.menuType == 'rsg-menu' then
+    if Config.MenuType == 'rsg-menu' then
                 -- Menú de categorías
         local categoryMenu = {
             {
