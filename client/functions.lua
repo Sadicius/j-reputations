@@ -1,9 +1,13 @@
 function Notify(msg,type,duration)
-    TriggerEvent('rNotify:Tip', msg, duration)
+        TriggerEvent('rNotify:Tip', msg, duration)
 end
 
-RegisterNetEvent('j-reputations:Notify')
-AddEventHandler('j-reputations:Notify', function(msg,type,duration)
+RegisterNetEvent('j-reputations:client:Notify')
+AddEventHandler('j-reputations:client:Notify', function(msg, type, duration)
     print("notify")
-    Notify(msg,type,duration)
+    if Config.menuType == 'ox_lib' then
+        lib.notify({title = msg, type = type, duration = duration})
+    else
+        Notify(msg, type, duration)
+    end
 end)

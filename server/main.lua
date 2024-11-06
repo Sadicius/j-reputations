@@ -1,57 +1,77 @@
 local RSGCore = exports['rsg-core']:GetCoreObject()
 
-RegisterServerEvent('j-reputations:addrep')
-AddEventHandler('j-reputations:addrep', function(repType, amount)
+RegisterServerEvent('j-reputations:server:addrep')
+AddEventHandler('j-reputations:server:addrep', function(repType, amount)
     local src = source
     local Player = RSGCore.Functions.GetPlayer(src)
     local citizenid = Player.PlayerData.citizenid
     local amount = amount or 1
-    local reputation = MySQL.query.await('SELECT reputationValue FROM reputations WHERE citizenid = ? AND repType = ? LIMIT 1', { citizenid, repType })
-
-    if reputation and reputation[1] then
-        local newReputationValue = reputation[1].reputationValue + amount
-        MySQL.update('UPDATE reputations SET reputationValue = ? WHERE citizenid = ? AND repType = ?', { newReputationValue, citizenid, repType })
-        print('Updated reputation for ' .. repType .. ' to ' .. newReputationValue .. ' for citizen ' .. citizenid)
-		TriggerClientEvent('j-reputations:Notify' , src , "You have receive " .. repType .. " reputation" , 'inform' , 5000)
+    local reputationData = MySQL.query.await('SELECT repData FROM reputations WHERE citizenid = ? LIMIT 1', { citizenid })
+    if not reputationData or not reputationData[1] then
+        local newRepData = json.encode(Config.Reputations)
+        MySQL.insert('INSERT INTO reputations (citizenid, repData) VALUES (?, ?)', { citizenid, newRepData })
+        reputationData = Config.Reputations
     else
-        MySQL.insert('INSERT INTO reputations (citizenid, repType, reputationValue) VALUES (?, ?, ?)', { citizenid, repType, amount })
-		TriggerClientEvent('j-reputations:Notify' , src , "You have receive " .. repType .. " reputation" , 'inform' , 5000)
+        reputationData = json.decode(reputationData[1].repData)
     end
+    for _, rep in ipairs(reputationData) do
+        if rep.repType == repType then
+            rep.reputationValue = rep.reputationValue + amount
+            break
+        end
+    end
+
+    local newreputationData = json.encode(reputationData)
+    MySQL.update('UPDATE reputations SET repData = ? WHERE citizenid = ?', { newreputationData, citizenid })
+    TriggerClientEvent('j-reputations:client:Notify', src, "You have received " .. repType .. " reputation", 'inform', 5000)
+
 end)
 
-
-RegisterServerEvent('j-reputations:removerep')
-AddEventHandler('j-reputations:removerep', function(repType, amount)
+RegisterServerEvent('j-reputations:server:removerep')
+AddEventHandler('j-reputations:server:removerep', function(repType, amount)
 	local src = source
 	local Player = RSGCore.Functions.GetPlayer(src)
 	local citizenid = Player.PlayerData.citizenid
-	local amount = amount or 1 
+	local amount = amount or 1
 
-	local reputation = MySQL.query.await('SELECT reputationValue FROM reputations WHERE citizenid = ? AND repType = ? LIMIT 1', { citizenid, repType })
+    local reputationData = MySQL.query.await('SELECT repData FROM reputations WHERE citizenid = ? LIMIT 1', { citizenid })
+    reputationData = reputationData and json.decode(reputationData[1].repData)
+    for _, rep in ipairs(reputationData) do
+        if rep.repType == repType then
+            rep.reputationValue = math.max(rep.reputationValue - amount, 0)
+            break
+        end
+    end
+    local newreputationData = json.encode(reputationData)
+    MySQL.update('UPDATE reputations SET repData = ? WHERE citizenid = ?', { newreputationData, citizenid })
+    TriggerClientEvent('j-reputations:client:Notify', src, repType .. " reputation reduced", 'inform', 5000)
 
-	if reputation and reputation[1] then
-		local newReputationValue = math.max(reputation[1].reputationValue - amount, 0)
-		
-		MySQL.update('UPDATE reputations SET reputationValue = ? WHERE citizenid = ? AND repType = ?', { newReputationValue, citizenid, repType })
-		TriggerClientEvent('j-reputations:Notify' , src , repType .. " reputation lessen" , 'inform' , 5000)
-	else
-		print('No reputation entry found for ' .. repType .. ' for citizen ' .. citizenid)
-	end
 end)
 
-
-RegisterServerEvent('j-reputations:checkrep')
-AddEventHandler('j-reputations:checkrep', function()
+RegisterServerEvent('j-reputations:server:checkrep')
+AddEventHandler('j-reputations:server:checkrep', function()
     local src = source
     local Player = RSGCore.Functions.GetPlayer(src)
     local citizenid = Player.PlayerData.citizenid
-    local reputations = MySQL.query.await('SELECT * FROM reputations WHERE citizenid = ? LIMIT 1', { citizenid })
-    if not reputations or reputations[1] == nil then
+
+    -- Consultar si existe registro para este citizenid
+    local reputationRecord = MySQL.query.await('SELECT repData FROM reputations WHERE citizenid = ? LIMIT 1', { citizenid })
+
+    if not reputationRecord or reputationRecord[1] == nil then
+        local initialReputations = {}
+
         for _, rep in ipairs(Config.Reputations) do
-            MySQL.insert.await('INSERT INTO reputations (citizenid, repType, reputationValue) VALUES (?, ?, ?)', {
-                citizenid, rep.repType, rep.reputationValue
+            table.insert(initialReputations, {
+                repType = rep.repType,
+                reputationValue = rep.reputationValue,
+                category = rep.category
             })
         end
+
+        MySQL.insert.await('INSERT INTO reputations (citizenid, repData) VALUES (?, ?)', {
+            citizenid, json.encode(initialReputations)
+        })
+
         print('Reputations initialized for new citizen ' .. citizenid)
     else
         print('Reputations already exist for citizen ' .. citizenid)
@@ -59,32 +79,38 @@ AddEventHandler('j-reputations:checkrep', function()
 end)
 
 
-
 ---- CALLBACKS ----
 -------------------
 
-lib.callback.register('j-reputations:getRep', function(source,repType)
+lib.callback.register('j-reputations:server:getRep', function(source, repType)
     local Player = RSGCore.Functions.GetPlayer(source)
     local citizenid = Player.PlayerData.citizenid
-    local reputation = MySQL.query.await('SELECT reputationValue FROM reputations WHERE citizenid = ? AND repType = ? LIMIT 1', { citizenid, repType })
-    if reputation and reputation[1] then
-        return reputation[1].reputationValue
-    else
-        return 0
+
+    local reputationData = MySQL.query.await('SELECT repData FROM reputations WHERE citizenid = ? LIMIT 1', { citizenid })
+
+    if reputationData and reputationData[1] then
+
+        local reputations = json.decode(reputationData[1].repData)
+
+        for _, rep in ipairs(reputations) do
+            if rep.repType == repType then
+                return rep.reputationValue
+            end
+        end
     end
+    return 0
 end)
 
-
-lib.callback.register('j-reputations:getAllRep', function(source)
+lib.callback.register('j-reputations:server:getAllRep', function(source)
     local Player = RSGCore.Functions.GetPlayer(source)
     local citizenid = Player.PlayerData.citizenid
+    print('hey get')
+    local reputationData = MySQL.query.await('SELECT repData FROM reputations WHERE citizenid = ? LIMIT 1', { citizenid })
+    print(json.encode(reputationData[1].repData))
+    if reputationData and reputationData[1] then
+        return json.decode(reputationData[1].repData)
+    else
+        return Config.Reputations
+    end
 
-    local reputations = MySQL.query.await('SELECT repType, reputationValue FROM reputations WHERE citizenid = ?', { citizenid })
-    return reputations or {}
 end)
-
-
-
-
-
-
